@@ -23,6 +23,7 @@
 #endif
 #include "gstdroidcamsrcrecorder.h"
 #include "gstdroidcamsrc.h"
+#include "droidmediacamera.h"
 #include <gst/droid/gstdroidcodec.h>
 
 #define GST_DROIDCAMSRC_RECORDER_TARGET_BITRATE_DEFAULT 192000
@@ -33,11 +34,14 @@ static void gst_droidcamsrc_recorder_data_available (void *data,
 GstDroidCamSrcRecorder *
 gst_droidcamsrc_recorder_create (GstDroidCamSrcPad * vidsrc)
 {
+  GstCaps *our_caps = gst_droidcamsrc_get_video_caps_locked (vidsrc);
   GstDroidCamSrcRecorder *recorder = g_new0 (GstDroidCamSrcRecorder, 1);
+  GstDroidCamSrc *src = GST_DROIDCAMSRC (GST_PAD_PARENT (vidsrc->pad));
 
   recorder->vidsrc = vidsrc;
   recorder->md.bitrate = GST_DROIDCAMSRC_RECORDER_TARGET_BITRATE_DEFAULT;
-  recorder->md.meta_data = true;
+  recorder->md.meta_data = droid_media_camera_store_meta_data_in_buffers (src->dev->cam, true);
+  gst_caps_set_simple (our_caps, "metadata", G_TYPE_BOOLEAN, recorder->md.meta_data, NULL);
   recorder->md.parent.flags = DROID_MEDIA_CODEC_HW_ONLY;
 
   return recorder;
